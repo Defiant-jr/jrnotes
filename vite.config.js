@@ -9,6 +9,7 @@ export default defineConfig({
     port: 5173,
     allowedHosts: [
       'experimental-jrnotes.umejya.easypanel.host',
+      'jrnotes.caedcj.com.br',
     ],
     proxy: {
       '/api': {
