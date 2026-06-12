@@ -16,8 +16,8 @@ function reducer(state, action) {
   switch (action.type) {
     case 'SET_LOADING': return { ...state, loading: action.payload };
     case 'SET_ERROR': return { ...state, error: action.payload, loading: false };
-    case 'SET_TASKS': return { ...state, tasks: action.payload, loading: false };
-    case 'SET_COMPLETED': return { ...state, completed: action.payload, loading: false };
+    case 'SET_TASKS': return { ...state, tasks: Array.isArray(action.payload) ? action.payload : [], loading: false };
+    case 'SET_COMPLETED': return { ...state, completed: Array.isArray(action.payload) ? action.payload : [], loading: false };
     case 'ADD_TASK': return { ...state, tasks: [action.payload, ...state.tasks] };
     case 'REMOVE_TASK': return { ...state, tasks: state.tasks.filter(t => t.id !== action.payload) };
     case 'UPDATE_TASK': return {

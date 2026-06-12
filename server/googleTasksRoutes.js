@@ -25,16 +25,21 @@ const getGoogleTasksAccessToken = async () => {
     throw new Error('Google Tasks nao configurado. Preencha GOOGLE_TASKS_CLIENT_ID, GOOGLE_TASKS_CLIENT_SECRET e GOOGLE_TASKS_REFRESH_TOKEN no .env.local.');
   }
 
-  const response = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      client_id: googleTasksConfig.clientId,
-      client_secret: googleTasksConfig.clientSecret,
-      refresh_token: googleTasksConfig.refreshToken,
-      grant_type: 'refresh_token'
-    })
-  });
+  let response;
+  try {
+    response = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: googleTasksConfig.clientId,
+        client_secret: googleTasksConfig.clientSecret,
+        refresh_token: googleTasksConfig.refreshToken,
+        grant_type: 'refresh_token'
+      })
+    });
+  } catch {
+    throw new Error('Falha de rede ao autenticar no Google. Verifique internet, proxy/firewall e acesso a oauth2.googleapis.com.');
+  }
 
   const payload = await response.json().catch(() => null);
   if (!response.ok || !payload?.access_token) {
@@ -58,14 +63,19 @@ const googleTasksRequest = async (pathname, options = {}) => {
     }
   }
 
-  const response = await fetch(url, {
-    method: options.method || 'GET',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      ...(options.body ? { 'Content-Type': 'application/json' } : {})
-    },
-    body: options.body ? JSON.stringify(options.body) : undefined
-  });
+  let response;
+  try {
+    response = await fetch(url, {
+      method: options.method || 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        ...(options.body ? { 'Content-Type': 'application/json' } : {})
+      },
+      body: options.body ? JSON.stringify(options.body) : undefined
+    });
+  } catch {
+    throw new Error('Falha de rede ao acessar Google Tasks. Verifique internet, proxy/firewall e acesso a tasks.googleapis.com.');
+  }
 
   if (response.status === 204) {
     return null;

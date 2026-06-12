@@ -32,17 +32,24 @@ async function req(path = '', options = {}) {
     throw new Error('Backend não está rodando. Inicie npm run server em outro terminal.');
   }
 
-  const payload = await res.json().catch(() => null);
+  const contentType = res.headers.get('content-type') || '';
+  const isJson = contentType.includes('application/json');
+  const payload = isJson ? await res.json().catch(() => null) : null;
+
+  if (!isJson) {
+    throw new Error('A rota de tarefas nao retornou JSON. Use npm run dev ou rode npm run server junto com npm run dev:client.');
+  }
+
   if (!res.ok || payload?.success === false) {
     throw new Error(payload?.message || payload?.error || `Erro na integração com Google Tasks (${res.status}). Verifique o terminal do backend.`);
   }
-  return payload;
+  return payload || {};
 }
 
 export const tasksApi = {
   async list(completed = false) {
     const payload = await req();
-    const items = (Array.isArray(payload.tasks) ? payload.tasks : []).map(normalizeTask);
+    const items = (Array.isArray(payload?.tasks) ? payload.tasks : []).map(normalizeTask);
 
     return {
       items: items.filter(task => completed ? task.status === 'completed' : task.status !== 'completed'),
@@ -54,7 +61,7 @@ export const tasksApi = {
       method: 'POST',
       body: JSON.stringify(toGoogleTasksPayload(body)),
     });
-    return normalizeTask(payload.task || payload);
+    return normalizeTask(payload?.task || payload);
   },
 
   async update(id, body) {
@@ -62,7 +69,7 @@ export const tasksApi = {
       method: 'PATCH',
       body: JSON.stringify(toGoogleTasksPayload(body)),
     });
-    return normalizeTask(payload.task || payload);
+    return normalizeTask(payload?.task || payload);
   },
 
   async remove(id) {
