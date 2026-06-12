@@ -45,14 +45,14 @@ export default function TaskForm({ compact = false }) {
     return (
       <form onSubmit={handleInlineSubmit} className="flex gap-2">
         <input
-          className="input-field flex-1 text-sm"
+          className="input-field min-w-0 flex-1"
           placeholder="Adicionar nova tarefa..."
           value={title}
           onChange={e => setTitle(e.target.value)}
           disabled={loading}
         />
-        <button type="submit" className="btn-primary flex items-center gap-1.5 shrink-0" disabled={loading || !title.trim()}>
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+        <button type="submit" className="btn-primary flex shrink-0 items-center justify-center gap-1.5 px-3 sm:px-4" disabled={loading || !title.trim()}>
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
           <span className="hidden sm:inline">Adicionar</span>
         </button>
       </form>
@@ -61,9 +61,10 @@ export default function TaskForm({ compact = false }) {
 
   return (
     <>
-      <button onClick={() => setOpen(true)} className="btn-primary flex items-center gap-2">
-        <Plus className="w-4 h-4" />
-        Nova Tarefa
+      <button onClick={() => setOpen(true)} className="btn-primary flex items-center justify-center gap-2">
+        <Plus className="h-4 w-4" />
+        <span>Nova</span>
+        <span className="hidden sm:inline">Tarefa</span>
       </button>
 
       <AnimatePresence>
@@ -73,26 +74,26 @@ export default function TaskForm({ compact = false }) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+              className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
               onClick={() => setOpen(false)}
             />
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: -20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: -20 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-              className="fixed inset-x-4 top-[10%] sm:inset-auto sm:left-1/2 sm:-translate-x-1/2 sm:top-24 sm:w-full sm:max-w-md glass-card p-6 z-50 shadow-2xl"
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 40 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+              className="fixed inset-x-0 bottom-0 z-50 max-h-[92dvh] overflow-y-auto rounded-b-none rounded-t-2xl border-b-0 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl sm:inset-auto sm:left-1/2 sm:top-24 sm:w-full sm:max-w-md sm:-translate-x-1/2 sm:rounded-lg sm:border-b sm:p-6 glass-card"
             >
-              <div className="flex items-center justify-between mb-5">
+              <div className="mb-5 flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-white">Nova Tarefa</h2>
-                <button onClick={() => setOpen(false)} className="p-1.5 text-white/40 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
-                  <X className="w-4 h-4" />
+                <button onClick={() => setOpen(false)} className="rounded-lg p-2 text-white/50 transition-colors hover:bg-white/10 hover:text-white">
+                  <X className="h-5 w-5" />
                 </button>
               </div>
 
               <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                 <div>
-                  <label className="block text-xs text-white/50 mb-1.5 font-medium uppercase tracking-wide">Título *</label>
+                  <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-white/50">Título *</label>
                   <input
                     className="input-field"
                     placeholder="O que precisa ser feito?"
@@ -104,8 +105,8 @@ export default function TaskForm({ compact = false }) {
                 </div>
 
                 <div>
-                  <label className="flex items-center gap-1.5 text-xs text-white/50 mb-1.5 font-medium uppercase tracking-wide">
-                    <AlignLeft className="w-3 h-3" /> Notas
+                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-white/50">
+                    <AlignLeft className="h-3 w-3" /> Notas
                   </label>
                   <textarea
                     className="textarea-field"
@@ -118,8 +119,8 @@ export default function TaskForm({ compact = false }) {
                 </div>
 
                 <div>
-                  <label className="flex items-center gap-1.5 text-xs text-white/50 mb-1.5 font-medium uppercase tracking-wide">
-                    <Calendar className="w-3 h-3" /> Data de vencimento
+                  <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-white/50">
+                    <Calendar className="h-3 w-3" /> Data de vencimento
                   </label>
                   <input
                     type="date"
@@ -134,9 +135,9 @@ export default function TaskForm({ compact = false }) {
                   <button type="button" onClick={() => setOpen(false)} className="btn-outline flex-1">
                     Cancelar
                   </button>
-                  <button type="submit" className="btn-primary flex-1 flex items-center justify-center gap-2" disabled={loading || !title.trim()}>
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                    Criar Tarefa
+                  <button type="submit" className="btn-primary flex flex-1 items-center justify-center gap-2" disabled={loading || !title.trim()}>
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                    Criar
                   </button>
                 </div>
               </form>

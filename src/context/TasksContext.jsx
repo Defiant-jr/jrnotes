@@ -1,6 +1,6 @@
 import { createContext, useContext, useReducer, useCallback, useRef } from 'react';
+import { format } from 'date-fns';
 import { tasksApi } from '../services/tasksApi.js';
-import { isToday, isPast, parseISO } from 'date-fns';
 
 const TasksContext = createContext(null);
 
@@ -23,6 +23,7 @@ function reducer(state, action) {
     case 'UPDATE_TASK': return {
       ...state,
       tasks: state.tasks.map(t => t.id === action.payload.id ? { ...t, ...action.payload } : t),
+      completed: state.completed.map(t => t.id === action.payload.id ? { ...t, ...action.payload } : t),
     };
     case 'MOVE_TO_COMPLETED': {
       const task = state.tasks.find(t => t.id === action.payload);
@@ -71,8 +72,7 @@ export function TasksProvider({ children }) {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
       const data = await tasksApi.list(true);
-      const completedItems = (data.items || []).filter(t => t.status === 'completed');
-      dispatch({ type: 'SET_COMPLETED', payload: completedItems });
+      dispatch({ type: 'SET_COMPLETED', payload: data.items || [] });
     } catch (err) {
       dispatch({ type: 'SET_ERROR', payload: err.message });
       showToast(err.message, 'error');
@@ -137,15 +137,16 @@ export function TasksProvider({ children }) {
   function getTaskStatus(task) {
     if (task.status === 'completed') return 'completed';
     if (!task.due) return 'pending';
-    const due = parseISO(task.due);
-    if (isToday(due)) return 'today';
-    if (isPast(due)) return 'overdue';
+    const dueKey = String(task.due).slice(0, 10);
+    const todayKey = format(new Date(), 'yyyy-MM-dd');
+    if (dueKey === todayKey) return 'today';
+    if (dueKey < todayKey) return 'overdue';
     return 'pending';
   }
 
   const todayTasks = state.tasks.filter(t => {
-    const s = getTaskStatus(t);
-    return s === 'today' || s === 'overdue';
+    const status = getTaskStatus(t);
+    return status === 'today' || status === 'overdue';
   });
 
   const stats = {

@@ -1,7 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { CheckSquare, Calendar, CheckCircle2, LayoutDashboard, Menu, X } from 'lucide-react';
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { CheckSquare, Calendar, CheckCircle2, LayoutDashboard } from 'lucide-react';
 
 const links = [
   { to: '/', label: 'Início', icon: LayoutDashboard, exact: true },
@@ -11,88 +9,61 @@ const links = [
 ];
 
 export default function Header() {
-  const [menuOpen, setMenuOpen] = useState(false);
-
   return (
     <header className="sticky top-0 z-50 glass-card rounded-none border-x-0 border-t-0 border-b border-white/10">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <NavLink to="/" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center shadow-lg">
-              <CheckSquare className="w-4 h-4 text-white" />
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="flex h-14 items-center justify-between sm:h-16">
+          <NavLink to="/" className="flex min-w-0 items-center gap-2.5 group">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-green-500 shadow-lg">
+              <CheckSquare className="h-4 w-4 text-white" />
             </div>
-            <div className="leading-none">
-              <span className="text-lg font-bold gradient-text">JR Notes</span>
-              <span className="block text-xs text-white/40 -mt-0.5">Gestão de Tarefas</span>
+            <div className="min-w-0 leading-none">
+              <span className="block truncate text-lg font-bold gradient-text">JR Notes</span>
+              <span className="block truncate text-xs text-white/40 -mt-0.5">Gestão de Tarefas</span>
             </div>
           </NavLink>
 
-          {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden items-center gap-1 md:flex">
             {links.map(({ to, label, icon: Icon, exact }) => (
               <NavLink
                 key={to}
                 to={to}
                 end={exact}
                 className={({ isActive }) =>
-                  `flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  `flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 ${
                     isActive
                       ? 'bg-blue-600/30 text-blue-300 border border-blue-500/40'
                       : 'text-white/60 hover:text-white/90 hover:bg-white/10'
                   }`
                 }
               >
-                <Icon className="w-4 h-4" />
+                <Icon className="h-4 w-4" />
                 {label}
               </NavLink>
             ))}
           </nav>
-
-          {/* Mobile menu toggle */}
-          <button
-            className="md:hidden p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-            onClick={() => setMenuOpen(!menuOpen)}
-            aria-label="Menu"
-          >
-            {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
         </div>
       </div>
 
-      {/* Mobile menu */}
-      <AnimatePresence>
-        {menuOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="md:hidden overflow-hidden border-t border-white/10"
+      <nav className="fixed inset-x-0 bottom-0 z-50 grid grid-cols-4 gap-1 border-t border-white/15 bg-slate-950/90 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-md md:hidden">
+        {links.map(({ to, label, icon: Icon, exact }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={exact}
+            className={({ isActive }) =>
+              `flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg text-[11px] font-medium transition-all ${
+                isActive
+                  ? 'bg-blue-600/30 text-blue-200 border border-blue-500/40'
+                  : 'text-white/55 active:bg-white/10'
+              }`
+            }
           >
-            <nav className="flex flex-col gap-1 p-3">
-              {links.map(({ to, label, icon: Icon, exact }) => (
-                <NavLink
-                  key={to}
-                  to={to}
-                  end={exact}
-                  onClick={() => setMenuOpen(false)}
-                  className={({ isActive }) =>
-                    `flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                      isActive
-                        ? 'bg-blue-600/30 text-blue-300 border border-blue-500/30'
-                        : 'text-white/60 hover:text-white hover:bg-white/10'
-                    }`
-                  }
-                >
-                  <Icon className="w-4 h-4" />
-                  {label}
-                </NavLink>
-              ))}
-            </nav>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <Icon className="h-5 w-5" />
+            <span className="leading-none">{label}</span>
+          </NavLink>
+        ))}
+      </nav>
     </header>
   );
 }

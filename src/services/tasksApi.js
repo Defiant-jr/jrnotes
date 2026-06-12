@@ -1,23 +1,74 @@
-const BASE = '/api/tasks';
+const BASE = '/api/google-tasks/tasks';
 
-async function req(path, options = {}) {
-  const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(err.error || 'Erro na requisição');
+function normalizeTask(task = {}) {
+  return {
+    id: task.id,
+    title: task.title || task.tarefa || '',
+    notes: task.notes || '',
+    due: task.due || task.data || null,
+    status: task.status || (task.concluida === 'S' ? 'completed' : 'needsAction'),
+    completed: task.completed || null,
+    updated: task.updated || null,
+  };
+}
+
+function toGoogleTasksPayload(body = {}) {
+  return {
+    ...(Object.prototype.hasOwnProperty.call(body, 'title') ? { title: body.title } : {}),
+    ...(Object.prototype.hasOwnProperty.call(body, 'notes') ? { notes: body.notes } : {}),
+    ...(Object.prototype.hasOwnProperty.call(body, 'due') ? { due: body.due } : {}),
+    ...(Object.prototype.hasOwnProperty.call(body, 'status') ? { status: body.status } : {}),
+  };
+}
+
+async function req(path = '', options = {}) {
+  let res;
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      headers: { 'Content-Type': 'application/json' },
+      ...options,
+    });
+  } catch {
+    throw new Error('Backend não está rodando. Inicie npm run server em outro terminal.');
   }
-  if (res.status === 204) return null;
-  return res.json();
+
+  const payload = await res.json().catch(() => null);
+  if (!res.ok || payload?.success === false) {
+    throw new Error(payload?.message || payload?.error || `Erro na integração com Google Tasks (${res.status}). Verifique o terminal do backend.`);
+  }
+  return payload;
 }
 
 export const tasksApi = {
-  list: (completed = false) => req(`?completed=${completed}`),
-  create: (body) => req('', { method: 'POST', body: JSON.stringify(body) }),
-  update: (id, body) => req(`/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
-  remove: (id) => req(`/${id}`, { method: 'DELETE' }),
-  complete: (id) => req(`/${id}/complete`, { method: 'POST' }),
-  reopen: (id) => req(`/${id}/reopen`, { method: 'POST' }),
+  async list(completed = false) {
+    const payload = await req();
+    const items = (Array.isArray(payload.tasks) ? payload.tasks : []).map(normalizeTask);
+
+    return {
+      items: items.filter(task => completed ? task.status === 'completed' : task.status !== 'completed'),
+    };
+  },
+
+  async create(body) {
+    const payload = await req('', {
+      method: 'POST',
+      body: JSON.stringify(toGoogleTasksPayload(body)),
+    });
+    return normalizeTask(payload.task || payload);
+  },
+
+  async update(id, body) {
+    const payload = await req(`/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(toGoogleTasksPayload(body)),
+    });
+    return normalizeTask(payload.task || payload);
+  },
+
+  async remove(id) {
+    await req(`/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  },
+
+  complete: (id) => tasksApi.update(id, { status: 'completed' }),
+  reopen: (id) => tasksApi.update(id, { status: 'needsAction' }),
 };

@@ -1,12 +1,21 @@
-import dotenv from 'dotenv';
-dotenv.config({ path: '.env.local' });
+import { createApp } from './app.js';
 
-import app from './app.js';
+const PORT = Number.parseInt(process.env.PORT ?? '3000', 10);
+const HOST = process.env.HOST ?? '0.0.0.0';
 
-const PORT = process.env.PORT || 3001;
-const HOST = process.env.HOST || 'localhost';
+async function start() {
+  try {
+    const { app } = await createApp();
 
-app.listen(PORT, HOST, () => {
-  console.log(`\n🚀  Servidor rodando em http://${HOST}:${PORT}`);
-  console.log(`   Google Tasks: lista "${process.env.GOOGLE_TASKS_LIST_ID || '@default'}"\n`);
-});
+    app.listen(PORT, HOST, () => {
+      const displayHost = HOST === '0.0.0.0' ? 'localhost' : HOST;
+      console.log(`[server] JR Notes disponivel em http://${displayHost}:${PORT}`);
+      console.log(`[server] Google Tasks: lista "${process.env.GOOGLE_TASKS_LIST_ID || '@default'}"`);
+    });
+  } catch (error) {
+    console.error('[server] Falha ao iniciar', error);
+    process.exit(1);
+  }
+}
+
+start();

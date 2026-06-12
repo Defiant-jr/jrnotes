@@ -6,7 +6,7 @@ export default function Toast() {
   const { toast } = useTasks();
 
   return (
-    <div className="fixed bottom-6 right-4 z-[100] sm:right-6 pointer-events-none">
+    <div className="fixed bottom-24 right-4 z-[100] sm:bottom-6 sm:right-6 pointer-events-none">
       <AnimatePresence>
         {toast && (
           <motion.div

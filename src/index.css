@@ -10,6 +10,8 @@
     @apply m-0 p-0 font-sans antialiased;
     background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #312e81 100%);
     min-height: 100vh;
+    min-height: 100dvh;
+    -webkit-tap-highlight-color: transparent;
   }
   ::-webkit-scrollbar {
     width: 6px;
@@ -25,11 +27,11 @@
 
 @layer components {
   .glass-card {
-    @apply bg-white/10 backdrop-blur-md rounded-xl border border-white/20 shadow-lg;
+    @apply bg-white/10 backdrop-blur-md rounded-lg border border-white/20 shadow-lg;
   }
 
   .glass-card-hover {
-    @apply glass-card transition-all duration-300 hover:bg-white/15 hover:border-white/30 hover:shadow-xl hover:scale-[1.02] cursor-pointer;
+    @apply glass-card transition-all duration-300 hover:bg-white/15 hover:border-white/30 hover:shadow-xl sm:hover:scale-[1.02] cursor-pointer;
   }
 
   .gradient-text {
@@ -37,19 +39,19 @@
   }
 
   .btn-primary {
-    @apply bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-400/50;
+    @apply bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-medium px-4 py-2.5 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-400/50 min-h-11;
   }
 
   .btn-outline {
-    @apply border border-blue-500/60 text-blue-300 hover:bg-blue-500/20 hover:border-blue-400 font-medium px-4 py-2 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400/50;
+    @apply border border-blue-500/60 text-blue-300 hover:bg-blue-500/20 hover:border-blue-400 font-medium px-4 py-2.5 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400/50 min-h-11;
   }
 
   .btn-danger {
-    @apply border border-red-500/60 text-red-400 hover:bg-red-500/20 hover:border-red-400 font-medium px-3 py-1.5 rounded-lg transition-all duration-200 text-sm;
+    @apply border border-red-500/60 text-red-400 hover:bg-red-500/20 hover:border-red-400 font-medium px-3 py-2 rounded-lg transition-all duration-200 text-sm min-h-10;
   }
 
   .input-field {
-    @apply w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2.5 text-white placeholder-white/40 focus:outline-none focus:border-blue-400/70 focus:bg-white/15 transition-all duration-200;
+    @apply w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-blue-400/70 focus:bg-white/15 transition-all duration-200 text-base sm:text-sm min-h-11;
   }
 
   .textarea-field {
@@ -77,10 +79,11 @@
   }
 
   .page-container {
-    @apply min-h-screen p-4 sm:p-6 lg:p-8;
+    @apply min-h-screen px-3 py-4 pb-24 sm:p-6 lg:p-8;
+    min-height: 100dvh;
   }
 
   .section-title {
-    @apply text-xl font-semibold text-white/90 mb-4;
+    @apply text-lg sm:text-xl font-semibold text-white/90 mb-4;
   }
 }
