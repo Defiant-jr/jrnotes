@@ -18,6 +18,19 @@ export async function createApp(options = {}) {
 
   app.disable('x-powered-by');
   app.use(express.json());
+  app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (/^http:\/\/(localhost|127\.0\.0\.1):(5173|4173)$/.test(origin || '')) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Vary', 'Origin');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
+    }
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(204);
+    }
+    return next();
+  });
 
   app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 

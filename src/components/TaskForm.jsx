@@ -34,8 +34,13 @@ export default function TaskForm({ compact = false }) {
     if (!title.trim()) return;
     setLoading(true);
     try {
-      await addTask({ title: title.trim() });
+      const body = { title: title.trim() };
+      if (notes.trim()) body.notes = notes.trim();
+      if (due) body.due = new Date(due + 'T00:00:00').toISOString();
+      await addTask(body);
       setTitle('');
+      setNotes('');
+      setDue('');
     } finally {
       setLoading(false);
     }
@@ -43,17 +48,45 @@ export default function TaskForm({ compact = false }) {
 
   if (compact) {
     return (
-      <form onSubmit={handleInlineSubmit} className="flex gap-2">
-        <input
-          className="input-field min-w-0 flex-1"
-          placeholder="Adicionar nova tarefa..."
-          value={title}
-          onChange={e => setTitle(e.target.value)}
-          disabled={loading}
-        />
-        <button type="submit" className="btn-primary flex shrink-0 items-center justify-center gap-1.5 px-3 sm:px-4" disabled={loading || !title.trim()}>
+      <form onSubmit={handleInlineSubmit} className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_12rem_auto]">
+        <div>
+          <input
+            className="input-field min-w-0"
+            placeholder="Título tarefa"
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+            disabled={loading}
+            aria-label="Título tarefa"
+          />
+        </div>
+
+        <div>
+          <input
+            type="date"
+            className="input-field [color-scheme:dark]"
+            value={due}
+            onChange={e => setDue(e.target.value)}
+            disabled={loading}
+            aria-label="Data da tarefa"
+          />
+        </div>
+
+        <div className="hidden sm:block" />
+
+        <div className="sm:col-span-2">
+          <input
+            className="input-field min-w-0"
+            placeholder="Detalhes da tarefa"
+            value={notes}
+            onChange={e => setNotes(e.target.value)}
+            disabled={loading}
+            aria-label="Detalhes da tarefa"
+          />
+        </div>
+
+        <button type="submit" className="btn-primary flex shrink-0 items-center justify-center gap-1.5 px-3 sm:px-4 sm:self-end" disabled={loading || !title.trim()}>
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-          <span className="hidden sm:inline">Adicionar</span>
+          <span>Adicionar</span>
         </button>
       </form>
     );

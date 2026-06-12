@@ -1,4 +1,8 @@
-const BASE = '/api/google-tasks/tasks';
+const localFrontendPorts = new Set(['5173', '4173']);
+const isLocalFrontend = ['localhost', '127.0.0.1'].includes(window.location.hostname)
+  && localFrontendPorts.has(window.location.port);
+const API_ORIGIN = import.meta.env.VITE_API_ORIGIN || (isLocalFrontend ? 'http://localhost:3000' : '');
+const BASE = `${API_ORIGIN}/api/google-tasks/tasks`;
 
 function normalizeTask(task = {}) {
   return {
@@ -37,7 +41,7 @@ async function req(path = '', options = {}) {
   const payload = isJson ? await res.json().catch(() => null) : null;
 
   if (!isJson) {
-    throw new Error('A rota de tarefas nao retornou JSON. Use npm run dev ou rode npm run server junto com npm run dev:client.');
+    throw new Error('API de tarefas indisponivel. Abra o app pelo npm run dev em http://localhost:3000 ou mantenha npm run server rodando junto com npm run dev:client.');
   }
 
   if (!res.ok || payload?.success === false) {
