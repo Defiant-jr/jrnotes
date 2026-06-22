@@ -108,17 +108,17 @@ export default function Home() {
           <button
             key={label}
             onClick={() => (action === 'refresh' ? loadTasks() : navigate(to))}
-            className={`glass-card-hover bg-gradient-to-br ${gradient} border ${border} p-3 text-left group sm:p-4`}
+            className={`glass-card-hover bg-gradient-to-br ${gradient} border ${border} flex min-w-0 items-center gap-3 p-3 text-left group sm:gap-4 sm:p-4`}
           >
-            <div className="mb-2 flex items-center justify-between gap-2 sm:mb-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 transition-transform group-hover:scale-105 sm:h-10 sm:w-10">
-                <Icon className={`h-5 w-5 ${iconColor}`} />
-              </div>
-              {to && <ArrowRight className="h-4 w-4 text-white/30" />}
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 transition-transform group-hover:scale-105 sm:h-10 sm:w-10">
+              <Icon className={`h-5 w-5 ${iconColor}`} />
             </div>
-            <p className="mb-0.5 text-sm font-semibold leading-tight text-white">{label}</p>
-            <div className="flex items-end justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold leading-tight text-white">{label}</p>
               <p className="text-xs leading-snug text-white/45">{desc}</p>
+            </div>
+            <div className="flex shrink-0 flex-col items-end gap-1">
+              {to && <ArrowRight className="h-4 w-4 text-white/30" />}
               {ref && <span className="text-[10px] font-semibold text-white/35">{ref}</span>}
             </div>
           </button>
