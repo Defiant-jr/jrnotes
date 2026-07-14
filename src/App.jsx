@@ -7,6 +7,7 @@ import TodayPage from './pages/TodayPage.jsx';
 import CompletedPage from './pages/CompletedPage.jsx';
 import { TasksProvider } from './context/TasksContext.jsx';
 import Toast from './components/Toast.jsx';
+import PasswordGate from './components/PasswordGate.jsx';
 
 export default function App() {
   return (
@@ -16,9 +17,9 @@ export default function App() {
         <AnimatePresence mode="wait">
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/tasks" element={<TasksPage />} />
-            <Route path="/today" element={<TodayPage />} />
-            <Route path="/completed" element={<CompletedPage />} />
+            <Route path="/tasks" element={<PasswordGate><TasksPage /></PasswordGate>} />
+            <Route path="/today" element={<PasswordGate><TodayPage /></PasswordGate>} />
+            <Route path="/completed" element={<PasswordGate><CompletedPage /></PasswordGate>} />
           </Routes>
         </AnimatePresence>
         <Toast />

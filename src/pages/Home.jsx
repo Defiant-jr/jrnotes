@@ -1,15 +1,14 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
-  CheckSquare, Calendar, CheckCircle2, ArrowRight,
-  ListTodo, AlertCircle, Loader2, RefreshCw,
+  Calendar, CheckCircle2, ArrowRight,
+  ListTodo, AlertCircle, RefreshCw,
 } from 'lucide-react';
 import { useTasks } from '../context/TasksContext.jsx';
 import StatsCard from '../components/StatsCard.jsx';
-import TaskCard from '../components/TaskCard.jsx';
 import TaskForm from '../components/TaskForm.jsx';
 
 const navCards = [
@@ -56,13 +55,12 @@ const navCards = [
 
 export default function Home() {
   const navigate = useNavigate();
-  const { tasks, stats, loading, loadTasks } = useTasks();
+  const { stats, loadTasks } = useTasks();
 
   useEffect(() => {
     loadTasks();
   }, []);
 
-  const recentTasks = tasks.slice(0, 5);
   const today = format(new Date(), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR });
   const todayCapitalized = today.charAt(0).toUpperCase() + today.slice(1);
 
@@ -81,7 +79,7 @@ export default function Home() {
             <span className="shrink-0 text-[10px] font-medium text-white/35 sm:text-xs">11000</span>
           </div>
           <h1 className="mb-2 text-2xl font-bold leading-tight text-white sm:text-4xl">
-            Olá! Aqui estão suas <span className="gradient-text">tarefas</span>
+            Olá! Aqui estão as tarefas de <span className="gradient-text">Jr.</span>
           </h1>
           <p className="text-sm text-white/55">
             {stats.today > 0
@@ -135,42 +133,6 @@ export default function Home() {
         <TaskForm compact />
       </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.34 }}
-      >
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="section-title mb-0">Tarefas recentes</h2>
-          <button
-            onClick={() => navigate('/tasks')}
-            className="flex shrink-0 items-center gap-1 text-xs text-blue-300 transition-colors hover:text-blue-200"
-          >
-            Ver todas <ArrowRight className="h-3 w-3" />
-          </button>
-        </div>
-
-        {loading && tasks.length === 0 ? (
-          <div className="glass-card flex flex-col items-center gap-3 p-8 text-white/45 sm:p-10">
-            <Loader2 className="h-6 w-6 animate-spin" />
-            <p className="text-sm">Carregando tarefas...</p>
-          </div>
-        ) : recentTasks.length === 0 ? (
-          <div className="glass-card flex flex-col items-center gap-3 p-8 text-white/45 sm:p-10">
-            <CheckSquare className="h-8 w-8" />
-            <p className="text-sm">Nenhuma tarefa pendente</p>
-            <TaskForm />
-          </div>
-        ) : (
-          <div className="flex flex-col gap-2">
-            <AnimatePresence>
-              {recentTasks.map((task, i) => (
-                <TaskCard key={task.id} task={task} index={i} />
-              ))}
-            </AnimatePresence>
-          </div>
-        )}
-      </motion.div>
     </motion.div>
   );
 }
