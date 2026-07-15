@@ -1,9 +1,10 @@
 import { NavLink } from 'react-router-dom';
-import { CheckSquare, Calendar, CheckCircle2, LayoutDashboard } from 'lucide-react';
+import { CheckSquare, Calendar, CalendarDays, CheckCircle2, LayoutDashboard } from 'lucide-react';
 
 const links = [
   { to: '/', label: 'Início', icon: LayoutDashboard, exact: true },
   { to: '/tasks', label: 'Tarefas', icon: CheckSquare },
+  { to: '/agenda', label: 'Agenda', icon: CalendarDays },
   { to: '/today', label: 'Hoje', icon: Calendar },
   { to: '/completed', label: 'Concluídas', icon: CheckCircle2 },
 ];
@@ -45,7 +46,7 @@ export default function Header() {
         </div>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-50 grid grid-cols-4 gap-1 border-t border-white/15 bg-slate-950/90 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-md md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-50 grid grid-cols-5 gap-1 border-t border-white/15 bg-slate-950/90 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-md md:hidden">
         {links.map(({ to, label, icon: Icon, exact }) => (
           <NavLink
             key={to}

@@ -6,6 +6,7 @@ import fs from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import tasksRouter from './routes/tasks.js';
+import googleCalendarRouter from './routes/googleCalendar.js';
 import { registerGoogleTasksRoutes } from './googleTasksRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -35,6 +36,7 @@ export async function createApp(options = {}) {
   app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
   app.use('/api/tasks', tasksRouter);
+  app.use('/api/google-calendar', googleCalendarRouter);
   registerGoogleTasksRoutes(app);
 
   if (!withFrontend) {

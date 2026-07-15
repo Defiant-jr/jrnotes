@@ -4,12 +4,13 @@ import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
-  Calendar, CheckCircle2, ArrowRight,
+  Calendar, CalendarDays, CheckCircle2, ArrowRight,
   ListTodo, AlertCircle, RefreshCw,
 } from 'lucide-react';
 import { useTasks } from '../context/TasksContext.jsx';
 import StatsCard from '../components/StatsCard.jsx';
 import TaskForm from '../components/TaskForm.jsx';
+import AgendaQuickForm from '../components/AgendaQuickForm.jsx';
 
 const navCards = [
   {
@@ -21,6 +22,16 @@ const navCards = [
     gradient: 'from-blue-600/30 to-blue-800/20',
     border: 'border-blue-500/30 hover:border-blue-400/60',
     iconColor: 'text-blue-400',
+  },
+  {
+    to: '/agenda',
+    icon: CalendarDays,
+    label: 'Agenda',
+    ref: '11400',
+    desc: 'Tarefas por data',
+    gradient: 'from-violet-600/30 to-violet-800/20',
+    border: 'border-violet-500/30 hover:border-violet-400/60',
+    iconColor: 'text-violet-400',
   },
   {
     to: '/today',
@@ -76,7 +87,7 @@ export default function Home() {
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
           <div className="mb-1 flex items-center justify-between gap-3">
             <p className="text-xs sm:text-sm text-white/45">{todayCapitalized}</p>
-            <span className="shrink-0 text-[10px] font-medium text-white/35 sm:text-xs">11000</span>
+            <span className="shrink-0 text-[10px] font-medium text-white/35 sm:text-xs">10000</span>
           </div>
           <h1 className="mb-2 text-2xl font-bold leading-tight text-white sm:text-4xl">
             Olá! Aqui estão as tarefas de <span className="gradient-text">Jr.</span>
@@ -100,7 +111,7 @@ export default function Home() {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="mb-6 grid grid-cols-2 gap-2.5 sm:mb-8 sm:gap-3 lg:grid-cols-4"
+        className="mb-6 grid grid-cols-2 gap-2.5 sm:mb-8 sm:gap-3 lg:grid-cols-5"
       >
         {navCards.map(({ to, action, icon: Icon, label, ref, desc, gradient, border, iconColor }) => (
           <button
@@ -129,8 +140,18 @@ export default function Home() {
         transition={{ delay: 0.28 }}
         className="glass-card mb-6 p-3 sm:p-4"
       >
-        <p className="mb-3 text-xs font-medium uppercase tracking-wide text-white/45">Adição rápida</p>
+        <p className="mb-3 text-xs font-medium uppercase tracking-wide text-white/45">Adição rápida de tarefa</p>
         <TaskForm compact />
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.34 }}
+        className="glass-card mb-6 p-3 sm:p-4"
+      >
+        <p className="mb-3 text-xs font-medium uppercase tracking-wide text-white/45">Adição rápida de Agenda</p>
+        <AgendaQuickForm />
       </motion.div>
 
     </motion.div>
