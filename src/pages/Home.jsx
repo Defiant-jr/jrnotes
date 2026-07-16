@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
   Calendar, CalendarDays, CheckCircle2, ArrowRight,
-  ListTodo, AlertCircle, RefreshCw,
+  ListTodo, AlertCircle,
 } from 'lucide-react';
 import { useTasks } from '../context/TasksContext.jsx';
 import StatsCard from '../components/StatsCard.jsx';
@@ -52,15 +52,6 @@ const navCards = [
     gradient: 'from-green-600/30 to-green-800/20',
     border: 'border-green-500/30 hover:border-green-400/60',
     iconColor: 'text-green-400',
-  },
-  {
-    action: 'refresh',
-    icon: RefreshCw,
-    label: 'Atualizar',
-    desc: 'Sincronizar',
-    gradient: 'from-indigo-600/30 to-indigo-800/20',
-    border: 'border-indigo-500/30 hover:border-indigo-400/60',
-    iconColor: 'text-indigo-400',
   },
 ];
 
@@ -111,7 +102,7 @@ export default function Home() {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="mb-6 grid grid-cols-2 gap-2.5 sm:mb-8 sm:gap-3 lg:grid-cols-5"
+        className="mb-6 grid grid-cols-2 gap-2.5 sm:mb-8 sm:gap-3 lg:grid-cols-4"
       >
         {navCards.map(({ to, action, icon: Icon, label, ref, desc, gradient, border, iconColor }) => (
           <button
