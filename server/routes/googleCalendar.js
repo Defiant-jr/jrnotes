@@ -28,7 +28,8 @@ router.post('/events', async (req, res) => {
     res.status(201).json({ event });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err.message });
+    const status = /^(Informe |Hora Fim)/.test(err.message || '') ? 400 : 500;
+    res.status(status).json({ error: err.message });
   }
 });
 
@@ -38,13 +39,14 @@ router.patch('/events/:id', async (req, res) => {
     res.json({ event });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err.message });
+    const status = /^(Informe |Hora Fim)/.test(err.message || '') ? 400 : 500;
+    res.status(status).json({ error: err.message });
   }
 });
 
 router.delete('/events/:id', async (req, res) => {
   try {
-    await deleteEvent(req.params.id);
+    await deleteEvent(req.params.id, { calendarId: req.query.calendarId });
     res.json({ ok: true });
   } catch (err) {
     console.error(err);

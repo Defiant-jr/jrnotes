@@ -7,8 +7,15 @@ const BASE = `${API_ORIGIN}/api/google-calendar/events`;
 function normalizeEvent(event = {}) {
   return {
     id: event.id,
+    key: event.key || event.id,
+    calendarId: event.calendarId || '',
+    calendarSummary: event.calendarSummary || '',
+    calendarColor: event.calendarColor || null,
+    calendarAccessRole: event.calendarAccessRole || '',
+    canEdit: event.canEdit !== false,
     title: event.title || event.summary || '',
     detail: event.detail || event.description || '',
+    notes: event.notes || event.detail || event.description || '',
     date: event.date || '',
     startTime: event.startTime || '09:00',
     endTime: event.endTime || '10:00',
@@ -73,7 +80,8 @@ export const calendarApi = {
     return normalizeEvent(payload?.event || payload);
   },
 
-  async remove(id) {
-    await req(`/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  async remove(id, { calendarId } = {}) {
+    const query = calendarId ? `?calendarId=${encodeURIComponent(calendarId)}` : '';
+    await req(`/${encodeURIComponent(id)}${query}`, { method: 'DELETE' });
   },
 };

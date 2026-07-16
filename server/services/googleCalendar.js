@@ -1,12 +1,16 @@
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
 
+const DEFAULT_GOOGLE_CALENDAR_ID = 'primary';
+const configuredGoogleCalendarId = String(process.env.GOOGLE_CALENDAR_ID || '').trim();
+
 const googleCalendarConfig = {
   accessToken: process.env.GOOGLE_CALENDAR_ACCESS_TOKEN,
   clientId: process.env.GOOGLE_CALENDAR_CLIENT_ID || process.env.GOOGLE_TASKS_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CALENDAR_CLIENT_SECRET || process.env.GOOGLE_TASKS_CLIENT_SECRET,
-  refreshToken: process.env.GOOGLE_CALENDAR_REFRESH_TOKEN || process.env.GOOGLE_TASKS_REFRESH_TOKEN,
-  calendarId: process.env.GOOGLE_CALENDAR_ID || 'primary',
+  refreshToken: process.env.GOOGLE_CALENDAR_REFRESH_TOKEN,
+  calendarId: configuredGoogleCalendarId || DEFAULT_GOOGLE_CALENDAR_ID,
+  calendarName: process.env.GOOGLE_CALENDAR_NAME,
   timeZone: process.env.GOOGLE_CALENDAR_TIME_ZONE || 'America/Sao_Paulo',
 };
 
@@ -14,6 +18,14 @@ const META_PREFIX = '[AGENDA]';
 
 let cachedAccessToken = null;
 let cachedAccessTokenExpiresAt = 0;
+let cachedAuthError = null;
+let cachedAuthErrorExpiresAt = 0;
+let cachedGoogleCalendarId = null;
+let cachedGoogleCalendarList = null;
+let cachedGoogleCalendarListExpiresAt = 0;
+
+const encodeCalendarId = (calendarId) => encodeURIComponent(calendarId).replace(/%40/g, '@');
+const calendarEventsPathFor = (calendarId) => `calendars/${encodeCalendarId(calendarId)}/events`;
 
 async function getAccessToken() {
   if (googleCalendarConfig.accessToken) {
@@ -24,9 +36,12 @@ async function getAccessToken() {
   if (cachedAccessToken && cachedAccessTokenExpiresAt > now + 60000) {
     return cachedAccessToken;
   }
+  if (cachedAuthError && cachedAuthErrorExpiresAt > now) {
+    throw cachedAuthError;
+  }
 
   if (!googleCalendarConfig.clientId || !googleCalendarConfig.clientSecret || !googleCalendarConfig.refreshToken) {
-    throw new Error('Google Calendar nao configurado. Preencha GOOGLE_CALENDAR_CLIENT_ID, GOOGLE_CALENDAR_CLIENT_SECRET e GOOGLE_CALENDAR_REFRESH_TOKEN no .env.local.');
+    throw new Error('Google Calendar nao configurado. Preencha GOOGLE_CALENDAR_CLIENT_ID, GOOGLE_CALENDAR_CLIENT_SECRET e GOOGLE_CALENDAR_REFRESH_TOKEN no .env.local. Se usar o mesmo OAuth Client das tarefas, copie GOOGLE_TASKS_CLIENT_ID e GOOGLE_TASKS_CLIENT_SECRET para as variaveis GOOGLE_CALENDAR_* e gere um refresh token com escopo de Calendar.');
   }
 
   let response;
@@ -47,11 +62,20 @@ async function getAccessToken() {
 
   const payload = await response.json().catch(() => null);
   if (!response.ok || !payload?.access_token) {
-    throw new Error(payload?.error_description || payload?.error || 'Falha ao renovar token do Google Calendar.');
+    if (payload?.error === 'invalid_grant') {
+      cachedAuthError = new Error('GOOGLE_CALENDAR_REFRESH_TOKEN invalido, expirado, revogado ou gerado para outro OAuth Client. Gere um novo refresh token no OAuth Playground usando o mesmo GOOGLE_CALENDAR_CLIENT_ID/SECRET e os escopos https://www.googleapis.com/auth/calendar e https://www.googleapis.com/auth/calendar.events.');
+      cachedAuthErrorExpiresAt = now + 30000;
+      throw cachedAuthError;
+    }
+    cachedAuthError = new Error(payload?.error_description || payload?.error || 'Falha ao renovar token do Google Calendar.');
+    cachedAuthErrorExpiresAt = now + 30000;
+    throw cachedAuthError;
   }
 
   cachedAccessToken = payload.access_token;
   cachedAccessTokenExpiresAt = now + Number(payload.expires_in || 3600) * 1000;
+  cachedAuthError = null;
+  cachedAuthErrorExpiresAt = 0;
   return cachedAccessToken;
 }
 
@@ -86,8 +110,8 @@ async function googleCalendarRequest(pathname, options = {}) {
   const payload = await response.json().catch(() => null);
   if (!response.ok) {
     const message = payload?.error?.message || `Google Calendar request failed: ${response.status}`;
-    if (response.status === 403) {
-      throw new Error(`${message}. Confirme se o token OAuth tem escopo https://www.googleapis.com/auth/calendar.events.`);
+    if (/insufficient authentication scopes/i.test(message)) {
+      throw new Error('Token sem permissao para Google Calendar. Gere um GOOGLE_CALENDAR_REFRESH_TOKEN com os escopos https://www.googleapis.com/auth/calendar e https://www.googleapis.com/auth/calendar.events.');
     }
     throw new Error(message);
   }
@@ -95,7 +119,7 @@ async function googleCalendarRequest(pathname, options = {}) {
 }
 
 function calendarPath(calendarId = googleCalendarConfig.calendarId, suffix = '') {
-  return `calendars/${encodeURIComponent(calendarId)}/events${suffix}`;
+  return `${calendarEventsPathFor(calendarId)}${suffix}`;
 }
 
 function normalizeDate(value) {
@@ -111,6 +135,119 @@ function normalizeTime(value, fallback) {
 
 function buildDateTime(date, time) {
   return `${date}T${time}:00`;
+}
+
+function hasValidTimeRange(startTime, endTime) {
+  return startTime < endTime;
+}
+
+function normalizeCalendarName(value) {
+  return String(value || '')
+    .trim()
+    .toLocaleLowerCase('pt-BR');
+}
+
+function isWritableCalendar(calendar) {
+  return ['owner', 'writer'].includes(calendar?.accessRole);
+}
+
+function mapGoogleCalendar(calendar = {}) {
+  return {
+    id: calendar.id,
+    summary: calendar.summary || calendar.id,
+    description: calendar.description || '',
+    backgroundColor: calendar.backgroundColor || null,
+    foregroundColor: calendar.foregroundColor || null,
+    accessRole: calendar.accessRole || 'reader',
+    primary: Boolean(calendar.primary),
+    selected: calendar.selected !== false,
+    canWrite: isWritableCalendar(calendar),
+  };
+}
+
+async function listAvailableGoogleCalendars({ force = false } = {}) {
+  const now = Date.now();
+  if (!force && cachedGoogleCalendarList && cachedGoogleCalendarListExpiresAt > now) {
+    return cachedGoogleCalendarList;
+  }
+
+  const calendars = [];
+  let pageToken = null;
+  do {
+    const payload = await googleCalendarRequest('users/me/calendarList', {
+      searchParams: {
+        maxResults: 250,
+        minAccessRole: 'reader',
+        showDeleted: false,
+        showHidden: true,
+        pageToken,
+      },
+    });
+    calendars.push(...(payload?.items || []).map(mapGoogleCalendar));
+    pageToken = payload?.nextPageToken || null;
+  } while (pageToken);
+
+  cachedGoogleCalendarList = calendars;
+  cachedGoogleCalendarListExpiresAt = now + 60000;
+  return calendars;
+}
+
+async function findOrCreateGoogleCalendarByName(calendarName) {
+  const normalizedCalendarName = normalizeCalendarName(calendarName);
+  if (!normalizedCalendarName) {
+    return googleCalendarConfig.calendarId;
+  }
+  if (cachedGoogleCalendarId) {
+    return cachedGoogleCalendarId;
+  }
+
+  const calendarList = await listAvailableGoogleCalendars();
+  const matchingCalendars = calendarList.filter(
+    (calendar) => normalizeCalendarName(calendar.summary) === normalizedCalendarName
+  );
+  const writableCalendar = matchingCalendars.find(isWritableCalendar);
+
+  if (writableCalendar?.id) {
+    cachedGoogleCalendarId = writableCalendar.id;
+    return cachedGoogleCalendarId;
+  }
+
+  const createdCalendar = await googleCalendarRequest('calendars', {
+    method: 'POST',
+    body: {
+      summary: calendarName.trim(),
+      timeZone: googleCalendarConfig.timeZone,
+    },
+  });
+
+  cachedGoogleCalendarId = createdCalendar.id;
+  cachedGoogleCalendarList = null;
+  cachedGoogleCalendarListExpiresAt = 0;
+  return cachedGoogleCalendarId;
+}
+
+function hasExplicitGoogleCalendarId() {
+  return Boolean(configuredGoogleCalendarId);
+}
+
+async function getTargetGoogleCalendarId() {
+  if (hasExplicitGoogleCalendarId()) {
+    return googleCalendarConfig.calendarId;
+  }
+  if (googleCalendarConfig.calendarName) {
+    return findOrCreateGoogleCalendarByName(googleCalendarConfig.calendarName);
+  }
+  return googleCalendarConfig.calendarId;
+}
+
+async function getCalendarById(calendarId) {
+  const calendars = await listAvailableGoogleCalendars();
+  return calendars.find((calendar) => calendar.id === calendarId) || {
+    id: calendarId,
+    summary: calendarId,
+    accessRole: 'owner',
+    canWrite: true,
+  };
 }
 
 function stripAgendaMeta(description = '') {
@@ -154,14 +291,22 @@ function eventTime(event = {}, field = 'start') {
   return match?.[1] || (field === 'start' ? '09:00' : '10:00');
 }
 
-export function mapGoogleCalendarEvent(event = {}) {
+export function mapGoogleCalendarEvent(event = {}, calendar = {}) {
   const meta = parseMeta(event.description);
   const category = event.extendedProperties?.private?.category || meta.category || 'administrativo';
+  const calendarId = calendar.id || googleCalendarConfig.calendarId;
 
   return {
     id: event.id,
+    key: `${calendarId}:${event.id}`,
+    calendarId,
+    calendarSummary: calendar.summary || '',
+    calendarColor: calendar.backgroundColor || null,
+    calendarAccessRole: calendar.accessRole || 'reader',
+    canEdit: isWritableCalendar(calendar),
     title: event.summary || '',
     detail: stripAgendaMeta(event.description),
+    notes: stripAgendaMeta(event.description),
     date: eventDate(event),
     startTime: eventTime(event, 'start'),
     endTime: eventTime(event, 'end'),
@@ -181,6 +326,8 @@ function toGoogleCalendarPayload(body = {}) {
 
   const startTime = normalizeTime(body.startTime || body.horaInicio, '09:00');
   const endTime = normalizeTime(body.endTime || body.horaFim, '10:00');
+  if (!hasValidTimeRange(startTime, endTime)) throw new Error('Hora Fim deve ser maior que Hora Inicio.');
+
   const category = String(body.category || 'administrativo').trim() || 'administrativo';
 
   return {
@@ -201,40 +348,60 @@ function toGoogleCalendarPayload(body = {}) {
 }
 
 export async function listEvents({ timeMin, timeMax, q } = {}) {
-  const payload = await googleCalendarRequest(calendarPath(), {
-    searchParams: {
-      timeMin,
-      timeMax,
-      q,
-      singleEvents: true,
-      orderBy: 'startTime',
-      maxResults: 250,
-    },
-  });
+  const calendars = await listAvailableGoogleCalendars();
+  const warnings = [];
+  const eventGroups = await Promise.all(calendars.map(async (calendar) => {
+    try {
+      const payload = await googleCalendarRequest(calendarPath(calendar.id), {
+        searchParams: {
+          timeMin,
+          timeMax,
+          q,
+          singleEvents: true,
+          orderBy: 'startTime',
+          showDeleted: false,
+          maxResults: 2500,
+        },
+      });
+      return (payload?.items || []).map((event) => mapGoogleCalendarEvent(event, calendar));
+    } catch (error) {
+      warnings.push({ calendarId: calendar.id, calendarSummary: calendar.summary, message: error.message });
+      return [];
+    }
+  }));
 
   return {
-    events: (payload?.items || []).map(mapGoogleCalendarEvent),
+    success: true,
+    calendars,
+    warnings,
+    events: eventGroups.flat(),
   };
 }
 
 export async function createEvent(body) {
-  const event = await googleCalendarRequest(calendarPath(), {
+  const calendarId = await getTargetGoogleCalendarId();
+  const calendar = hasExplicitGoogleCalendarId()
+    ? { id: calendarId, summary: calendarId, accessRole: 'owner' }
+    : await getCalendarById(calendarId);
+  const event = await googleCalendarRequest(calendarPath(calendarId), {
     method: 'POST',
     body: toGoogleCalendarPayload(body),
   });
-  return mapGoogleCalendarEvent(event);
+  return mapGoogleCalendarEvent(event, calendar);
 }
 
 export async function updateEvent(eventId, body) {
-  const event = await googleCalendarRequest(calendarPath(googleCalendarConfig.calendarId, `/${encodeURIComponent(eventId)}`), {
+  const calendarId = String(body?.calendarId || '').trim() || await getTargetGoogleCalendarId();
+  const event = await googleCalendarRequest(calendarPath(calendarId, `/${encodeURIComponent(eventId)}`), {
     method: 'PATCH',
     body: toGoogleCalendarPayload(body),
   });
-  return mapGoogleCalendarEvent(event);
+  return mapGoogleCalendarEvent(event, { id: calendarId, summary: calendarId, accessRole: 'owner' });
 }
 
-export async function deleteEvent(eventId) {
-  return googleCalendarRequest(calendarPath(googleCalendarConfig.calendarId, `/${encodeURIComponent(eventId)}`), {
+export async function deleteEvent(eventId, { calendarId } = {}) {
+  const targetCalendarId = String(calendarId || '').trim() || await getTargetGoogleCalendarId();
+  return googleCalendarRequest(calendarPath(targetCalendarId, `/${encodeURIComponent(eventId)}`), {
     method: 'DELETE',
   });
 }

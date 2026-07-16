@@ -165,7 +165,7 @@ export default function AgendaPage() {
         endTime: form.endTime,
         category: form.category,
       });
-      setEvents(current => [event, ...current.filter(item => item.id !== event.id)]);
+      setEvents(current => [event, ...current.filter(item => (item.key || item.id) !== (event.key || event.id))]);
       setForm(current => ({
         ...current,
         title: '',
@@ -176,10 +176,10 @@ export default function AgendaPage() {
     }
   }
 
-  async function removeEvent(id) {
+  async function removeEvent(id, calendarId) {
     try {
-      await calendarApi.remove(id);
-      setEvents(current => current.filter(item => item.id !== id));
+      await calendarApi.remove(id, { calendarId });
+      setEvents(current => current.filter(item => !(item.id === id && (!calendarId || item.calendarId === calendarId))));
     } catch (err) {
       setError(err.message);
     }
@@ -408,7 +408,7 @@ export default function AgendaPage() {
                       {items.map(item => {
                         const category = CATEGORY_BY_KEY[item.category] || CATEGORIES[0];
                         return (
-                          <article key={item.id} className={`group rounded-[4px] border px-2 py-1 text-xs shadow-sm ${category.event}`}>
+                          <article key={item.key || item.id} className={`group rounded-[4px] border px-2 py-1 text-xs shadow-sm ${category.event}`}>
                             <div className="flex items-start justify-between gap-2">
                               <a
                                 href={item.htmlLink || undefined}
@@ -419,7 +419,7 @@ export default function AgendaPage() {
                                 <span className="font-mono">{item.startTime}</span> {item.title}
                               </a>
                               <div className="flex shrink-0 opacity-0 transition-opacity group-hover:opacity-100">
-                                <button type="button" onClick={() => removeEvent(item.id)} className="rounded p-1 hover:bg-white/15" aria-label="Remover compromisso">
+                                <button type="button" onClick={() => removeEvent(item.id, item.calendarId)} className="rounded p-1 hover:bg-white/15" aria-label="Remover compromisso">
                                   <Trash2 className="h-3.5 w-3.5" />
                                 </button>
                               </div>
